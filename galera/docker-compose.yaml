@@ -1,0 +1,99 @@
+name: galera
+
+x-galera-node: &galera-node
+  image: mariadb:11.8.9
+  restart: unless-stopped
+  environment:
+    - MARIADB_DATABASE=${MARIADB_DATABASE}
+    - MARIADB_USER=${MARIADB_USER}
+    - MARIADB_PASSWORD=${MARIADB_PASSWORD}
+    - MARIADB_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+    - MARIADB_EXPORTER_USER=${MARIADB_EXPORTER_USER}
+    - MARIADB_EXPORTER_PASSWORD=${MARIADB_EXPORTER_PASSWORD}
+  healthcheck:
+    test: ["CMD", "healthcheck.sh", "--su-mysql", "--no-defaults", "--connect", "--galera_online"]
+    start_period: 120s
+    interval: 10s
+    timeout: 5s
+    retries: 3
+  networks:
+    - monitoring
+
+services:
+  galera1:
+    <<: *galera-node
+    container_name: galera1
+    entrypoint: ["bash", "/bootstrap.sh"]
+    command: ["--wsrep-node-name=galera1"]
+    volumes:
+      - galera1-data:/var/lib/mysql
+      - ./galera.cnf:/etc/mysql/conf.d/galera.cnf:ro
+      - ./bootstrap.sh:/bootstrap.sh:ro
+      - ./init:/docker-entrypoint-initdb.d:ro
+
+  galera2:
+    <<: *galera-node
+    container_name: galera2
+    command: ["--wsrep-node-name=galera2"]
+    volumes:
+      - galera2-data:/var/lib/mysql
+      - ./galera.cnf:/etc/mysql/conf.d/galera.cnf:ro
+    depends_on:
+      galera1:
+        condition: service_healthy
+
+  galera3:
+    <<: *galera-node
+    container_name: galera3
+    command: ["--wsrep-node-name=galera3"]
+    volumes:
+      - galera3-data:/var/lib/mysql
+      - ./galera.cnf:/etc/mysql/conf.d/galera.cnf:ro
+    depends_on:
+      galera2:
+        condition: service_healthy
+
+  # HAProxy под именем mariadb
+  mariadb:
+    image: haproxy:3.4
+    container_name: mariadb
+    restart: unless-stopped
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    depends_on:
+      galera3:
+        condition: service_healthy
+    networks:
+      - monitoring
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:2.5.8
+    container_name: uptime-kuma
+    restart: unless-stopped
+    environment:
+      - UPTIME_KUMA_DB_TYPE=mariadb
+      - UPTIME_KUMA_DB_HOSTNAME=mariadb
+      - UPTIME_KUMA_DB_PORT=3306
+      - UPTIME_KUMA_DB_NAME=${MARIADB_DATABASE}
+      - UPTIME_KUMA_DB_USERNAME=${MARIADB_USER}
+      - UPTIME_KUMA_DB_PASSWORD=${MARIADB_PASSWORD}
+    volumes:
+      - uptime-kuma-data:/app/data
+    ports:
+      - "3001:3001"
+    depends_on:
+      mariadb:
+        condition: service_started
+    networks:
+      - monitoring
+
+volumes:
+  galera1-data:
+  galera2-data:
+  galera3-data:
+  uptime-kuma-data:
+
+networks:
+  monitoring:
+    name: monitoring
+    external: true

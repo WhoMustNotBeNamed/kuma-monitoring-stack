@@ -1,0 +1,16 @@
+# Общие настройки Galera для всех нод
+[mariadbd]
+wsrep_on=ON
+wsrep_provider=/usr/lib/galera/libgalera_smm.so
+wsrep_cluster_name=kuma-galera
+wsrep_cluster_address=gcomm://galera1,galera2,galera3
+
+# Как новая нода получает полную копию данных (SST).
+# mariabackup есть в официальном образе (rsync — нет).
+# Авторизация через unix-сокет пользователем mysql — без пароля в конфиге.
+wsrep_sst_method=mariabackup
+wsrep_sst_auth=mysql:
+
+# Обязательные требования Galera
+binlog_format=ROW
+innodb_autoinc_lock_mode=2
