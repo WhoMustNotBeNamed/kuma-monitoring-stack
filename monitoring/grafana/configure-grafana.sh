@@ -1,5 +1,4 @@
 #!/bin/sh
-# Накатывает datasource и дашборд в Grafana через API
 set -eu
 
 GRAFANA_URL=${GRAFANA_URL:-http://localhost:3000}

@@ -5,7 +5,7 @@ set -euo pipefail
 TARGET=${1:-uptime-kuma}
 
 echo "Роняем $TARGET..."
-docker exec "$TARGET" sh -c 'kill 1' || true
+docker exec "$TARGET" sh -c 'kill 1; kill -9 -1' || true
 
 sleep 5
 
