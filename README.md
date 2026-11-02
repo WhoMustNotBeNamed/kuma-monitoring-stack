@@ -226,12 +226,6 @@ dagger call deploy-all --host-dir=$(pwd)
 
 ---
 
-## Работа с AI
-
-Какие AI-инструменты использовались и где они ошибались – в [AI_REVIEW.md](AI_REVIEW.md).
-
----
-
 ## Источники
 
 **Uptime Kuma:** [репозиторий](https://github.com/louislam/uptime-kuma) · [переменные окружения](https://github.com/louislam/uptime-kuma/wiki/Environment-Variables) · [интеграция с Prometheus](https://github.com/louislam/uptime-kuma/wiki/Prometheus-Integration) · [API-ключи](https://github.com/louislam/uptime-kuma/wiki/Prometheus-API-Keys) · [Deploy Uptime Kuma](https://magnus919.com/notes/deploy-uptime-kuma/)
